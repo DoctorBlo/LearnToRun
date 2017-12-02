@@ -11,32 +11,29 @@ class UnitTestReplayMemory(unittest.TestCase):
 
     def testPush(self):
         RepMem = ReplayMemory()
-        for i in range(0, 40):
-            RepMem.pushSample(torch.mul(torch.ones(41),i), i)
-        for i in range(0, 40):
-            curr = RepMem.memory[i,:]
-            res = torch.sum(curr)
-            val = 41 * i
-            self.assertEqual(RepMem.reward[i], i)
-            self.assertEqual(res, val) 
+        actions = ['a','b', 'c']
+        for i in range(0, RepMem.size):
+            RepMem.push(i, actions[i % 3],  1, i + 1)
+            memory = RepMem.memory[i]
+            self.assertEqual(memory['a'], actions[i%3])
+            self.assertEqual(memory['s'], i)
+            self.assertEqual(memory['sprime'], i + 1)
+            self.assertEqual(memory['r'], 1)
 
-        RepMem.pushSample(torch.mul(torch.ones(41),41), 41)
-        curr = RepMem.memory[0,:]
-        res = torch.sum(curr)
-        self.assertEqual(res, 41 * 41),
-        self.assertEqual(RepMem.reward[0], 41)
+        for i in range(RepMem.size, RepMem.size * 2):
+            RepMem.push(i, actions[i % 3],  1, i + 1)
+            memory = RepMem.memory[i % RepMem.size]
+            self.assertEqual(memory['a'], actions[i%3])
+            self.assertEqual(memory['s'], i)
+            self.assertEqual(memory['sprime'], i + 1)
+            self.assertEqual(memory['r'], 1)
 
-        RepMem.pushSample(torch.mul(torch.ones(41),42), 42)
-        curr = RepMem.memory[1,:]
-        res = torch.sum(curr)
-        self.assertEqual(res, 41 * 42)
-        self.assertEqual(RepMem.reward[1], 42)
         
     def testPushInxes(self):
         RepMem = ReplayMemory()
 
         for i in range(0, 200000):
-            RepMem.pushSample(torch.ones(41), i)
+            RepMem.push(1,1,1,1)
             self.assertEqual(RepMem.indx, ((i + 1) % RepMem.size))
 
 
