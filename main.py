@@ -41,5 +41,8 @@ for episode in range(0, episodes):
             agent.saveActorCritic()
             print("reseting environment" + str(episode))
             break
+        action = agent.selectAction(s)
+        action = action.numpy()
         prevState = state;
+
  

@@ -4,6 +4,7 @@ from ReplayMemory import ReplayMemory
 import torch
 from torch.autograd import Variable
 import torch.optim as optim
+import random
 class DDPG:
     def __init__(self, gamma, memory, s, a, tau, learningRate = 1e-3,criticpath=None, actorpath=None):
         self.gamma =gamma
@@ -26,13 +27,20 @@ class DDPG:
         self.state = s
         self.action = a 
 
-    def proccessNoise(self):
+    def processNoise(self):
         #this should be something more eloquent....
-        return torch.rand(self.actor)
+        ret = torch.rand(self.action)
+        ret[torch.bernoulli(torch.rand(self.action)).byte()] = 0.0
+        return ret
 
     def selectAction(self, state):
         #remember, state better be an autograd Variable
-        return self.targetActor(state) + self.processNoise()
+        ret = self.targetActor(Variable(state)).data
+        if(random.random() > .5):
+            ret = ret + self.processNoise()
+
+        
+        return torch.clamp(ret, 0.0, 1.0) 
 
     def addToMemory(self, state, action, reward, stateprime):
         self.memory.push(state, action, reward, stateprime)
