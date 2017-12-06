@@ -13,7 +13,7 @@ env = RunEnv(visualize=False)
 observation = env.reset(difficulty=0)
 	
 episodes  = 100000
-agent = DDPG(.9, 2000, 54, 18, .1)
+agent = DDPG(.9, 2000, 54, 18, .1,criticpath='critic', actorpath='actor')
 
 for episode in range(0, episodes):
 
@@ -38,6 +38,8 @@ for episode in range(0, episodes):
 #        env.render()
         if done:
             env.reset(difficulty = 0, seed = None) #resets the environment if done is true
+            agent.saveActorCritic()
             print("reseting environment" + str(episode))
             break
+        prevState = state;
  

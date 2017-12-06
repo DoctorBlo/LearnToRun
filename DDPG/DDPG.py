@@ -5,11 +5,15 @@ import torch
 from torch.autograd import Variable
 import torch.optim as optim
 class DDPG:
-    def __init__(self, gamma, memory, s, a, tau, learningRate = 1e-3):
+    def __init__(self, gamma, memory, s, a, tau, learningRate = 1e-3,criticpath=None, actorpath=None):
         self.gamma =gamma
         self.memory = ReplayMemory(memory)
         self.actor = Actor(state= s, actions = a)
         self.critic = Critic(state = s, actions = a)
+        if(not(criticpath== None)):
+            self.critic.load_state_dict(torch.load(criticpath))
+        if(not(actorpath==None)):
+            self.actor.load_state_dict(torch.load(actorpath))
         self.targetActor = Actor(state= s, actions = a)
         self.targetActor.load_state_dict(self.actor.state_dict())
         self.targetCritic = Critic(state= s, actions = a)
@@ -92,5 +96,8 @@ class DDPG:
 
         self.targetCritic.load_state_dict(tCriticDict)
         self.targetActor.load_state_dict(tActorDict)
+    def saveActorCritic(self):
+        torch.save(self.critic.state_dict(), './critic')
+        torch.save(self.actor.state_dict(), './actor')
 
 
