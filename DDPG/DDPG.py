@@ -29,9 +29,16 @@ class DDPG:
 
     def processNoise(self):
         #this should be something more eloquent....
-        ret = torch.rand(self.action)
-        ret[torch.bernoulli(torch.rand(self.action)).byte()] = 0.0
-        return ret
+        ret = torch.rand(self.action) / 2.0 
+        for i in range(0, self.action):
+            r = random.random()
+            if ( r <= .33):
+                ret[i] = ret[i]
+            elif ( .33 < r and r <=.66):
+                ret[i] = 0
+            else:
+                ret[i] = -ret[i]
+        return ret 
 
     def selectAction(self, state):
         #remember, state better be an autograd Variable
