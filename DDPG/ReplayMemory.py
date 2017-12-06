@@ -13,7 +13,7 @@ class ReplayMemory:
         else:
             self.memory[self.indx] = mem
         self.indx = (self.indx + 1) % self.size
-    def batchSample(self, batchSize):
+    def batch(self, batchSize):
         return random.sample(self.memory, batchSize)
 
     def singleSample(self):
@@ -21,3 +21,6 @@ class ReplayMemory:
 
     def len(self):
         return len(self.memory)
+
+    def isFull(self):
+        return len(self.memory) == self.size

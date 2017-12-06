@@ -35,6 +35,7 @@ class UnitTestReplayMemory(unittest.TestCase):
         for i in range(0, 200000):
             RepMem.push(1,1,1,1)
             self.assertEqual(RepMem.indx, ((i + 1) % RepMem.size))
+        self.assertTrue(RepMem.isFull())
 
 
 if __name__ == '__main__':
