@@ -13,7 +13,7 @@ env = RunEnv(visualize=False)
 observation = env.reset(difficulty=0)
 	
 episodes  = 100000
-agent = DDPG(.9, 2000, 54, 18, .1,criticpath='critic', actorpath='actor')
+agent = DDPG(.9, 2000, 54, 18, .0001,criticpath='critic', actorpath='actor')
 
 for episode in range(0, episodes):
 
@@ -31,7 +31,6 @@ for episode in range(0, episodes):
         #means it didn't go the full simulation
         if done and i < 1000:
             reward = -1
-
         state = Preprocess.GetState(observation)
         s,a,r,sp = Preprocess.ConvertToTensor(prevState,action, reward, state)
         agent.addToMemory(s,a,r,sp)
