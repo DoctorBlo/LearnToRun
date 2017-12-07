@@ -30,7 +30,6 @@ for episode in range(0, episodes):
         observation = np.array(observation)
         #means it didn't go the full simulation
         if done and i < 1000:
-            print('bad agent')
             reward = -1
 
         state = Preprocess.GetState(observation)
