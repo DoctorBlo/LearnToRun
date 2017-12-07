@@ -77,7 +77,7 @@ if __name__ == '__main__':
     l = multiprocessing.Lock()
     pool = multiprocessing.Pool(initializer=init, initargs=(l,))
     print 'Number of Processes: ', pool._processes
-    for i in range(0, 10):
+    for i in range(0, 20):
         pool.apply_async(func=Simulation, args=(agent,1000))
     pool.close()
     pool.join()
