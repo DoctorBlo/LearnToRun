@@ -40,13 +40,13 @@ class AsyncDDPG(object):
         i = 0
         for sample in batch:
             Q[i,:]= torch.cat((sample['s'], sample['a']))
-            transition = target.actor(Variable(sample['sprime'],volatile=True)).data
+            transition = target.targetActor(Variable(sample['sprime'],volatile=True)).data
             Qprime[i,:]  = torch.cat((sample['sprime'], transition),dim=0)
             rewards[i,0] = sample['r'][0]
             i += 1
 
         #Critic Update
-        Qprime = self.gamma * target.critic(Variable(Qprime)).data + rewards
+        Qprime = self.gamma * target.targetCritic(Variable(Qprime)).data + rewards
         Qprime = Variable(Qprime)
 
         Q = self.critic(Variable(Q))

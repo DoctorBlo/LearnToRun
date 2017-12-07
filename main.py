@@ -28,6 +28,11 @@ for episode in range(0, episodes):
     for i in range(1,1000):
         observation, reward, done, info = env.step(action)
         observation = np.array(observation)
+        #means it didn't go the full simulation
+        if done and i < 1000:
+            print('bad agent')
+            reward = -1
+
         state = Preprocess.GetState(observation)
         s,a,r,sp = Preprocess.ConvertToTensor(prevState,action, reward, state)
         agent.addToMemory(s,a,r,sp)

@@ -34,10 +34,7 @@ def Simulation(proxy_agent, episodes):
     target = proxy_agent.ProduceTargetActorCritic( memory, tau, epsilon )	
     batches =  [ 16, 32, 64, 128]
     batchsize = batches[random.randint(0,len(batches)-1)] 
-
     for episode in range(0, episodes):
-        
-
         action = env.action_space.sample()
         observation, reward, done, info = env.step(action)
         observation = np.array(observation)
@@ -46,6 +43,10 @@ def Simulation(proxy_agent, episodes):
         for i in range(1,1000):
             observation, reward, done, info = env.step(action)
             observation = np.array(observation)
+            #means it didn't go the full simulation
+            if done and i < 1000:
+                reward = -1
+
             state = Preprocess.GetState(observation)
             s,a,r,sp = Preprocess.ConvertToTensor(prevState,action, reward, state)
             target.addToMemory(s,a,r,sp)
@@ -54,10 +55,13 @@ def Simulation(proxy_agent, episodes):
             if done:
                 env.reset(difficulty = 0, seed = None) #resets the environment if done is true
                 if(target.primedToLearn()):
+
                     lock.acquire()
-                    proxy_Agent.PerformUpdate(self, batchsize, target)
+                    proxy_agent.PerformUpdate(batchsize, target)
                     target.UpdateTargetNetworks(agent.getCritic(), agent.getActor())
-                    proxy_Agent.saveActorCritic()
+                    print("saving actor")
+                    proxy_agent.saveActorCritic()
+                    print("actor saved")
                     lock.release()
                 print("reseting environment" + str(episode))
                 break
@@ -73,9 +77,7 @@ if __name__ == '__main__':
     l = multiprocessing.Lock()
     pool = multiprocessing.Pool(initializer=init, initargs=(l,))
     print 'Number of Processes: ', pool._processes
-
     for i in range(0, 10):
-        print("hello")
         pool.apply_async(func=Simulation, args=(agent,1000))
     pool.close()
     pool.join()
