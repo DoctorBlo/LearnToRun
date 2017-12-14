@@ -8,10 +8,10 @@ import sys
 
 from DDPG.DDPG import DDPG
 
-env = RunEnv(visualize=False)
-#env = RunEnv(visualize=True)
+#env = RunEnv(visualize=False)
+env = RunEnv(visualize=True)
 observation = env.reset(difficulty=0)
-	
+
 episodes  = 100000
 agent = DDPG(.9, 2000, 54, 18, .0001,criticpath='critic', actorpath='actor')
 
@@ -19,7 +19,7 @@ for episode in range(0, episodes):
 
     #env.step(action)
     # action is a list of length 18. values between [0,1]
-    ## specifics: 9 muscles per leg, 2 legs = 18. 
+    ## specifics: 9 muscles per leg, 2 legs = 18.
     action = env.action_space.sample()
     observation, reward, done, info = env.step(action)
     observation = np.array(observation)
@@ -27,10 +27,15 @@ for episode in range(0, episodes):
     prevState = Preprocess.GetState(observation)
     for i in range(1,1000):
         observation, reward, done, info = env.step(action)
+        reward = env.current_state[4] * 0.01
+        reward += 0.01  # small reward for still standing
+        reward += min(0, env.current_state[22] - env.current_state[1]) * 0.1  # penalty for head behind pelvis
+        reward -= sum([max(0.0, k - 0.1) for k in [env.current_state[7], env.current_state[10]]]) * 0.02  # penalty for straight legs
+
         observation = np.array(observation)
         #means it didn't go the full simulation
-        if done and i < 1000:
-            reward = -1
+        if done:
+            reward = 0
         state = Preprocess.GetState(observation)
         s,a,r,sp = Preprocess.ConvertToTensor(prevState,action, reward, state)
         agent.addToMemory(s,a,r,sp)
@@ -47,5 +52,3 @@ for episode in range(0, episodes):
         action = agent.selectAction(s)
         action = action.numpy()
         prevState = state;
-
- 
