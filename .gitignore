@@ -1,5 +1,4 @@
 *.log
 *.pyc
 *.swp
-population/*net
 EvolutionaryLearning/population/*net
