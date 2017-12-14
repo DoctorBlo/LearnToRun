@@ -12,4 +12,3 @@ class Actor(nn.Module):
         x = F.elu(self.hidden1(x))
         x = F.elu(self.hidden2(x))
         return F.sigmoid(self.outputs(x))
-        

@@ -13,4 +13,3 @@ class Critic(nn.Module):
         x = F.elu(self.hidden1(x))
         x = F.elu(self.hidden2(x))
         return self.outputs(x)
- 

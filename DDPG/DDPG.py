@@ -5,6 +5,7 @@ import torch
 from torch.autograd import Variable
 import torch.optim as optim
 import random
+import numpy as np
 class DDPG:
     def __init__(self, gamma, memory, s, a, tau, learningRate = 1e-3,criticpath=None, actorpath=None):
         self.gamma =gamma
@@ -20,16 +21,16 @@ class DDPG:
         self.targetCritic = Critic(state= s, actions = a)
         self.targetCritic.load_state_dict(self.critic.state_dict())
         self.tau = tau
-        
+
         self.actorOptimizer = optim.Adam(self.actor.parameters(),learningRate)
         self.criticOptimizer = optim.Adam(self.critic.parameters(),learningRate)
         #more a dimensionality thing
         self.state = s
-        self.action = a 
+        self.action = a
 
     def processNoise(self):
         #this should be something more eloquent....
-        ret = torch.rand(self.action) / 2.0 
+        ret = torch.rand(self.action) / 2.0
         for i in range(0, self.action):
             r = random.random()
             if ( r <= .33):
@@ -38,16 +39,39 @@ class DDPG:
                 ret[i] = 0
             else:
                 ret[i] = -ret[i]
-        return ret 
+        return ret
+
+    def OUprocess(self, sigma, theta):
+        # define model parameters
+        t_0 = 0
+        t_end = 2
+        length = self.action
+        mu = 0
+
+        t = np.linspace(t_0,t_end,length) # define time axis
+        dt = np.mean(np.diff(t))
+        y = np.zeros(length)
+        y0 = np.random.normal(loc=0.0,scale=1.0) # initial condition
+        drift = lambda y,t: theta*(mu-y) # define drift term
+        diffusion = lambda y,t: sigma # define diffusion term
+        noise = np.random.normal(loc=0.0,scale=1.0,size=length)*np.sqrt(dt) #define noise process
+        # solve SDE
+        for i in xrange(1,length):
+            y[i] = y[i-1] + drift(y[i-1],i*dt)*dt + diffusion(y[i-1],i*dt)*noise[i]
+
+        ret = torch.zeros(self.action)
+        for i in range(0, self.action):
+            ret[i] = y[i]
+        return ret
 
     def selectAction(self, state):
         #remember, state better be an autograd Variable
         ret = self.targetActor(Variable(state)).data
-        if(random.random() > .5):
-            ret = ret + self.processNoise()
+        if(random.random() > .9):
+            ret = ret + self.OUprocess(0.2, 0.15)
 
-        
-        return torch.clamp(ret, 0.0, 1.0) 
+
+        return torch.clamp(ret, 0.0, 1.0)
 
     def addToMemory(self, state, action, reward, stateprime):
         self.memory.push(state, action, reward, stateprime)
@@ -57,9 +81,9 @@ class DDPG:
     def PerformUpdate(self, batchsize):
         #Mildly important, according to https://github.com/vy007vikas/PyTorch-ActorCriticRL
         # the criterion on the actor is this: sum(-Q(s,a)) I'm assuming this is over the batch....
-        self.actorOptimizer.zero_grad() 
+        self.actorOptimizer.zero_grad()
         self.criticOptimizer.zero_grad()
- 
+
         batch = self.memory.batch(batchsize)
         Q = torch.zeros(len(batch),self.state + self.action )
         Qprime = torch.zeros(len(batch),self.state + self.action )
@@ -68,29 +92,29 @@ class DDPG:
         i = 0
         for sample in batch:
             Q[i,:]= torch.cat((sample['s'], sample['a']))
-            transition = self.actor(Variable(sample['sprime'],volatile=True)).data
+            transition = self.targetActor(Variable(sample['sprime'],volatile=True)).data
             Qprime[i,:]  = torch.cat((sample['sprime'], transition),dim=0)
             rewards[i,0] = sample['r'][0]
             i += 1
 
         #Critic Update
-        Qprime = self.gamma * self.critic(Variable(Qprime)).data + rewards
+        Qprime = self.gamma * self.targetCritic(Variable(Qprime)).data + rewards
         Qprime = Variable(Qprime)
         Q = self.critic(Variable(Q))
         criterion = torch.nn.MSELoss()
         loss = criterion(Q, Qprime)
         loss.backward()
         self.criticOptimizer.step()
- 
+
         criterion = torch.nn.MSELoss()
 
-        self.actorOptimizer.zero_grad() 
+        self.actorOptimizer.zero_grad()
         S = torch.zeros(len(batch), self.state)
         i = 0
         for sample in batch:
             S[i,:]= sample['s']
             i += 1
-        A = self.actor(Variable(S)) 
+        A = self.actor(Variable(S))
         loss = -1 * torch.sum(self.critic(torch.cat((Variable(S),A), dim=1)))
         loss.backward()
         self.actorOptimizer.step()
@@ -98,7 +122,7 @@ class DDPG:
 
 
 
-    def UpdateTargetNetworks(self): 
+    def UpdateTargetNetworks(self):
         criticDict = self.critic.state_dict()
         tCriticDict = self.targetCritic.state_dict()
         for param in criticDict.keys():
@@ -114,5 +138,3 @@ class DDPG:
     def saveActorCritic(self):
         torch.save(self.critic.state_dict(), './critic')
         torch.save(self.actor.state_dict(), './actor')
-
-
