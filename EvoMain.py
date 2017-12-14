@@ -39,6 +39,7 @@ def Simulation(proxy_agent,index, return_dict,  episodes):
                 env.reset(difficulty = 0, seed = None) #resets the environment if done is true
                 print("reseting environment" + str(episode))
                 rewards[episode] = totalreward
+                totalreward = 0
                 break
             action = proxy_agent(Variable(s, volatile=True))
             action = action.data.numpy()
@@ -84,5 +85,6 @@ if __name__ == '__main__':
         print("Current Mean Performance: " + str(NeuroNN.getMeanPerformance()))
         NeuroNN.performCrossOver()
         NeuroNN.performMutation()
+        NeuroNN.savePopulation()
 
     print("cool beans")

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.init
 import numpy as np
 import copy
 import random
@@ -7,11 +8,11 @@ import time
 from scipy import stats
 import multiprocessing
 from multiprocessing.managers import BaseManager
-
+import time
 
 class NeuralGeneticAlgorithm:
 
-    def __init__(self,scorefunction,  population=int(1e3), mutation=1e-1, toKeep=100):
+    def __init__(self,scorefunction,  population=int(1e3), mutation=1e-1, toKeep=100, savedir='population'):
         self.size = population
         self.mutation = mutation
         self.toKeep = toKeep
@@ -22,6 +23,7 @@ class NeuralGeneticAlgorithm:
         self.state = 0
         self.action = 0
         self.mean = 0 #Generations mean score
+        self.dir = savedir
     def generateInitialPopulation(self, hiddenlayer=150,state=41,action=18):
         self.hiddenlayer = hiddenlayer
         self.state = state
@@ -32,8 +34,18 @@ class NeuralGeneticAlgorithm:
                     nn.ELU(),
                     nn.Linear(hiddenlayer, action),
                     nn.Sigmoid())
+            net = self.initializeNetworkWeights(net)
             score = 0
             self.population[i] = {'net': net, 'score': score}
+    def initializeNetworkWeights(self, net):
+        for param in net.parameters():
+            
+            if(len(param.data.size()) < 2):
+                continue
+            torch.nn.init.xavier_uniform(param.data, gain=np.random.randint(1, 10))
+
+        return net
+
     def selectParents(self, dev=3):
         scores = np.zeros(self.size)
         for i in range(0, self.size):
@@ -104,10 +116,16 @@ class NeuralGeneticAlgorithm:
             scores[i].join()
 
         for i in range(0,self.size):
+            print(return_dict[i])
             self.population[i]['score'] = return_dict[i]
         
     def getMeanPerformance(self):
         return self.mean
+
+    def savePopulation(self):
+        for i in range(0,self.size):
+            model = self.population[i]['net']
+            torch.save(model.state_dict(), './' +  self.dir + '/' + str(i) + 'net')
 
 
         
