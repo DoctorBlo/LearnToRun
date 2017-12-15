@@ -25,8 +25,8 @@ def init(l):
     lock = l
 
 
-def Simulation(proxy_agent, episodes):
-    env = RunEnv(visualize=False)
+def Simulation(proxy_agent, episodes, vis=False):
+    env = RunEnv(visualize=vis)
     observation = env.reset(difficulty=0)
     memory = random.randint(1000, 2000)
     tau = random.uniform(0.01, .9)
@@ -40,7 +40,10 @@ def Simulation(proxy_agent, episodes):
         observation = np.array(observation)
         Preprocess = Preprocessing(observation, delta=0.01)
         prevState = Preprocess.GetState(observation)
-        target.OUprocess(random.random(), 0.15,0.0)
+        if(vis):
+            target.OUprocess(0, 0.15, 0.0)
+        else:
+            target.OUprocess(random.random(), 0.15,0.0)
         pelvis_y = 0
 
         for i in range(1,1000):
@@ -84,12 +87,13 @@ def Simulation(proxy_agent, episodes):
 
 if __name__ == '__main__':
     manager = Manager()
-    agent = manager.AsyncDDPG(.9, 54, 18, 1e-3)
+    agent = manager.AsyncDDPG(.9, 54, 18, 1e-3,criticpath='./AsyncCritic', actorpath='./AsyncActor')
     l = multiprocessing.Lock()
     pool = multiprocessing.Pool(initializer=init, initargs=(l,))
     print 'Number of Processes: ', pool._processes
-    for i in range(0, 20):
-        pool.apply_async(func=Simulation, args=(agent,10))#1000))
+    Simulation(agent, 10, vis=True)
+    #for i in range(0, 20):
+    #    pool.apply_async(func=Simulation, args=(agent,10))#1000))
     pool.close()
     pool.join()
     print("cool beans")
