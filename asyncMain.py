@@ -40,12 +40,23 @@ def Simulation(proxy_agent, episodes):
         observation = np.array(observation)
         Preprocess = Preprocessing(observation, delta=0.01)
         prevState = Preprocess.GetState(observation)
+        target.OUprocess(random.random(), 0.15,0.0)
+        pelvis_y = 0
+
         for i in range(1,1000):
             observation, reward, done, info = env.step(action)
             observation = np.array(observation)
             #means it didn't go the full simulation
+            if i > 1:
+                reward += (observation[2] - pelvis_y)*0.01 #penalty for pelvis going down
+            reward = env.current_state[4] * 0.01
+            reward += 0.01  # small reward for still standing
+            reward += min(0, env.current_state[22] - env.current_state[1]) * 0.1  # penalty for head behind pelvis
+            reward -= sum([max(0.0, k - 0.1) for k in [env.current_state[7], env.current_state[10]]]) * 0.02  # penalty for straight legs
+
+
             if done and i < 1000:
-                reward = -1
+                reward = 0
 
             state = Preprocess.GetState(observation)
             s,a,r,sp = Preprocess.ConvertToTensor(prevState,action, reward, state)
@@ -78,7 +89,7 @@ if __name__ == '__main__':
     pool = multiprocessing.Pool(initializer=init, initargs=(l,))
     print 'Number of Processes: ', pool._processes
     for i in range(0, 20):
-        pool.apply_async(func=Simulation, args=(agent,1000))
+        pool.apply_async(func=Simulation, args=(agent,10))#1000))
     pool.close()
     pool.join()
     print("cool beans")

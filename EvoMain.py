@@ -74,7 +74,7 @@ if __name__ == '__main__':
     episodes = 1
     pop = 100
     d = 'population'
-    generations=0
+    generations=20
     sim = lambda a, i, d: Simulation(a,i, d,  episodes)
     NeuroNN = NeuralGeneticAlgorithm(sim, population=pop, mutation=1e-1, toKeep=10)
     NeuroNN.generateInitialPopulation( hiddenlayer=150,state=54,action=18,directory=d)
@@ -90,13 +90,13 @@ if __name__ == '__main__':
         NeuroNN.performMutation()
         NeuroNN.savePopulation()
 
-    #NeuroNN.generateScores() 
-    #strongest = NeuroNN.getStrongest(dev=3)
+    NeuroNN.generateScores() 
+    strongest = NeuroNN.getStrongest(dev=3)
     i = 0 
-    #for s in strongest:
-     #   net = s['net']
-      #  torch.save(net.state_dict(), './strongest/net' + str(i))
-       # i += 1
+    for s in strongest:
+        net = s['net']
+        torch.save(net.state_dict(), './strongest/net' + str(i))
+        i += 1
     i = 0
     strongest = NeuroNN.population
     for s in strongest:
