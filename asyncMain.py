@@ -24,16 +24,16 @@ def init(l):
     global lock
     lock = l
 
-	
+
 def Simulation(proxy_agent, episodes):
     env = RunEnv(visualize=False)
     observation = env.reset(difficulty=0)
     memory = random.randint(1000, 2000)
     tau = random.uniform(0.01, .9)
     epsilon = random.uniform(.15, .9)
-    target = proxy_agent.ProduceTargetActorCritic( memory, tau, epsilon )	
+    target = proxy_agent.ProduceTargetActorCritic( memory, tau, epsilon )
     batches =  [ 16, 32, 64, 128]
-    batchsize = batches[random.randint(0,len(batches)-1)] 
+    batchsize = batches[random.randint(0,len(batches)-1)]
     for episode in range(0, episodes):
         action = env.action_space.sample()
         observation, reward, done, info = env.step(action)

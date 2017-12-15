@@ -27,12 +27,12 @@ class DDPG:
         #more a dimensionality thing
         self.state = s
         self.action = a
-        self.OUarray = self.OUprocess(0.2, 0.15, 0.0)
-        self.step = 1
+        self.OUarray = np.zeros((1000, self.action),dtype="f")
+        self.step = 0
 
     def processNoise(self):
         #this should be something more eloquent....
-        ret = torch.rand(self.action) / 2.0
+        ret = torch.rand(self.action)
         for i in range(0, self.action):
             r = random.random()
             if ( r <= .33):
@@ -46,28 +46,27 @@ class DDPG:
     def OUprocess(self, sigma, theta, mu):
         # define model parameters
         t_0 = 0
-        t_end = 2
+        t_end = 10
         length = 1000
 
         y = np.zeros((length, self.action),dtype="f")
         t = np.linspace(t_0,t_end,length) # define time axis
         dt = np.mean(np.diff(t))
-        y0 = np.random.normal(loc=0.0,scale=1.0) # initial condition
         drift = lambda y,t: theta*(mu-y) # define drift term
         diffusion = lambda y,t: sigma # define diffusion term
 
         # solve SDE
         for j in xrange(1, self.action):
+            y[0][j] = np.random.normal(loc=0.0,scale=1.0) # initial condition
             noise = np.random.normal(loc=0.0,scale=1.0,size=length)*np.sqrt(dt) #define noise process
             for i in xrange(1,length):
                 y[i][j] = y[i-1][j] + drift(y[i-1][j],i*dt)*dt + diffusion(y[i-1][j],i*dt)*noise[i]
-        return y
+        self.OUarray = y
 
     def selectAction(self, state):
         #remember, state better be an autograd Variable
         ret = self.targetActor(Variable(state)).data
-        if(random.random() > .9):
-            ret = ret + torch.from_numpy(self.OUarray[self.step])
+        ret = ret + torch.from_numpy(self.OUarray[self.step])
         self.step += 1
         return torch.clamp(ret, 0.0, 1.0)
 

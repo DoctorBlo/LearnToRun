@@ -25,8 +25,15 @@ for episode in range(0, episodes):
     observation = np.array(observation)
     Preprocess = Preprocessing(observation, delta=0.01)
     prevState = Preprocess.GetState(observation)
+    agent.step = 0
+    agent.OUprocess(.312, 0.15, 0.0)
     for i in range(1,1000):
+        if i > 1:
+            pelvis_y = observation[2]
         observation, reward, done, info = env.step(action)
+
+        if i > 1:
+            reward += (observation[2] - pelvis_y)*0.01 #penalty for pelvis going down
         reward = env.current_state[4] * 0.01
         reward += 0.01  # small reward for still standing
         reward += min(0, env.current_state[22] - env.current_state[1]) * 0.1  # penalty for head behind pelvis
