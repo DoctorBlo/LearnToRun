@@ -1,4 +1,5 @@
 from osim.env import RunEnv
+import torch
 import numpy as np
 import time
 import random
@@ -11,9 +12,9 @@ from torch.autograd import Variable
 from Preprocessing import Preprocessing
 from EvolutionaryLearning.NeuralGeneticAlgorithm import NeuralGeneticAlgorithm
 
-def Simulation(proxy_agent,index, return_dict,  episodes):
+def Simulation(proxy_agent,index, return_dict,  episodes, vis=False):
     print('starting simulation')
-    env = RunEnv(visualize=False)
+    env = RunEnv(visualize=vis)
     observation = env.reset(difficulty=0)
 
     rewards = np.zeros(episodes)
@@ -72,10 +73,12 @@ if __name__ == '__main__':
     l = multiprocessing.Lock()
     episodes = 1
     pop = 100
+    d = 'population'
+    generations=0
     sim = lambda a, i, d: Simulation(a,i, d,  episodes)
     NeuroNN = NeuralGeneticAlgorithm(sim, population=pop, mutation=1e-1, toKeep=10)
-    NeuroNN.generateInitialPopulation( hiddenlayer=150,state=54,action=18)
-    for i in range(0, 100):
+    NeuroNN.generateInitialPopulation( hiddenlayer=150,state=54,action=18,directory=d)
+    for i in range(0, generations):
         pool = multiprocessing.Pool(initializer=init, initargs=(l,))
         if (i == 0):
             print 'Number of Processes: ', pool._processes
@@ -87,4 +90,20 @@ if __name__ == '__main__':
         NeuroNN.performMutation()
         NeuroNN.savePopulation()
 
+    #NeuroNN.generateScores() 
+    #strongest = NeuroNN.getStrongest(dev=3)
+    i = 0 
+    #for s in strongest:
+     #   net = s['net']
+      #  torch.save(net.state_dict(), './strongest/net' + str(i))
+       # i += 1
+    i = 0
+    strongest = NeuroNN.population
+    for s in strongest:
+        print(s)
+        net = s['net']
+        torch.load('./strongest/net' + str(i))
+        Simulation(net,i,{}, 1,vis=True) 
+        i += 1
+        #torch.save(net.state_dict(), './strongest/net' + str(i))
     print("cool beans")

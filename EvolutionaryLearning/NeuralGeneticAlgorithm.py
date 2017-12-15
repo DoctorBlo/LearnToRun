@@ -24,7 +24,7 @@ class NeuralGeneticAlgorithm:
         self.action = 0
         self.mean = 0 #Generations mean score
         self.dir = savedir
-    def generateInitialPopulation(self, hiddenlayer=150,state=41,action=18):
+    def generateInitialPopulation(self, hiddenlayer=150,state=41,action=18,directory=None):
         self.hiddenlayer = hiddenlayer
         self.state = state
         self.action = action
@@ -34,7 +34,12 @@ class NeuralGeneticAlgorithm:
                     nn.ELU(),
                     nn.Linear(hiddenlayer, action),
                     nn.Sigmoid())
-            net = self.initializeNetworkWeights(net)
+            if(directory == None):
+                net = self.initializeNetworkWeights(net)
+            else:
+                params = torch.load('./' + directory + '/' + str(i) + 'net')
+                net.load_state_dict(params)
+
             score = 0
             self.population[i] = {'net': net, 'score': score}
     def initializeNetworkWeights(self, net):
@@ -116,7 +121,6 @@ class NeuralGeneticAlgorithm:
             scores[i].join()
 
         for i in range(0,self.size):
-            print(return_dict[i])
             self.population[i]['score'] = return_dict[i]
         
     def getMeanPerformance(self):
@@ -126,6 +130,24 @@ class NeuralGeneticAlgorithm:
         for i in range(0,self.size):
             model = self.population[i]['net']
             torch.save(model.state_dict(), './' +  self.dir + '/' + str(i) + 'net')
+    def getStrongest(self,dev=3):
+        scores = np.zeros(self.size)
+        for i in range(0, self.size):
+            scores[i] = self.population[i]['score']
+        self.mean = np.mean(scores) 
+        scores = stats.zscore(scores)
+        strongest = np.sum(scores >= dev)
+        if(strongest == 0):
+            print("no strong parents")
+        parents = [None] * min(self.toKeep, strongest)
+
+        indx = 0
+        for i in range(0, self.size):
+            if(scores[i] >= dev and (indx < self.toKeep) ):
+                parents[indx] = self.population[i]
+                indx += 1 
+        return parents
+
 
 
         
